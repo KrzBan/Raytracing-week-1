@@ -19,6 +19,21 @@ class moving_sphere : public hittable {
             double _time0, double _time1, aabb& output_box) const override;
         point3 center(double time) const;
 
+        static void get_sphere_uv(const point3& p, double& u, double& v) {
+            // p: a given point on the sphere of radius one, centered at the origin.
+            // u: returned value [0,1] of angle around the Y axis from X=-1.
+            // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+            //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+            //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+            //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+            auto theta = acos(-p.y());
+            auto phi = atan2(-p.z(), p.x()) + pi;
+
+            u = phi / (2 * pi);
+            v = theta / pi;
+        }
+
     public:
         point3 center0, center1;
         double time0, time1;
@@ -48,6 +63,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
     rec.p = r.at(rec.t);
     auto outward_normal = (rec.p - center(r.time())) / radius;
     rec.set_face_normal(r, outward_normal);
+    get_sphere_uv(outward_normal, rec.u, rec.v);
     rec.mat_ptr = mat_ptr;
 
     return true;
