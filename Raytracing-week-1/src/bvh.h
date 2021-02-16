@@ -64,7 +64,9 @@ bvh_node::bvh_node(
         : box_z_compare;
 
     size_t object_span = end - start;
-
+    if (object_span == 0) {
+        return;
+    }
     if (object_span == 1) {
         left = right = objects[start];
     }
