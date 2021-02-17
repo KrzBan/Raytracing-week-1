@@ -5,7 +5,6 @@
 #include <memory>
 #include <random>
 
-
 // Usings
 
 using std::shared_ptr;

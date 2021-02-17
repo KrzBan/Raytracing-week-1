@@ -8,12 +8,19 @@
 #include "src/aarect.h"
 #include "src/Box.h"
 #include "src/Constant_medium.h"
+#include "src/Pdf.h"
 
 #include "src/Ray.h"
 #include "src/Camera.h"
 #include "src/Material.h"
 
-color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
+color ray_color(
+    const ray& r,
+    const color& background,
+    const hittable& world,
+    std::shared_ptr<hittable_list>& lights,
+    int depth
+) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -24,14 +31,25 @@ color ray_color(const ray& r, const color& background, const hittable& world, in
     if (!world.hit(r, 0.001, infinity, rec))
         return background;
 
-    ray scattered;
-    color attenuation;
-    color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-
-    if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+    scatter_record srec;
+    color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+    if (!rec.mat_ptr->scatter(r, rec, srec))
         return emitted;
 
-    return emitted + attenuation * ray_color(scattered, background, world, depth - 1);
+    if (srec.is_specular) {
+        return srec.attenuation
+            * ray_color(srec.specular_ray, background, world, lights, depth - 1);
+    }
+
+    auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
+    mixture_pdf p(light_ptr, srec.pdf_ptr);
+
+    ray scattered = ray(rec.p, p.generate(), r.time());
+    auto pdf_val = p.value(scattered.direction());
+
+    return emitted
+        + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+        * ray_color(scattered, background, world, lights, depth - 1) / pdf_val;
 }
 
 hittable_list random_scene() {
@@ -136,20 +154,19 @@ hittable_list cornell_box() {
 
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
-    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
-    shared_ptr<hittable> box1 = make_shared<box>(point3(0, 0, 0), point3(165, 330, 165), white);
+    shared_ptr<material> aluminum = make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
+    shared_ptr<hittable> box1 = make_shared<box>(point3(0, 0, 0), point3(165, 330, 165), aluminum);
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265, 0, 295));
     objects.add(box1);
 
-    shared_ptr<hittable> box2 = make_shared<box>(point3(0, 0, 0), point3(165, 165, 165), white);
-    box2 = make_shared<rotate_y>(box2, -18);
-    box2 = make_shared<translate>(box2, vec3(130, 0, 65));
-    objects.add(box2);
+    auto glass = make_shared<dielectric>(1.5);
+    objects.add(make_shared<sphere>(point3(190, 90, 190), 90, glass));
 
     return objects;
 }
@@ -250,9 +267,10 @@ hittable_list final_scene() {
 int main() {
 
     // Image
-    auto aspect_ratio = 16.0 / 9.0;
-    int image_width = 200;
-    const int samples_per_pixel = 1000;
+    const auto aspect_ratio = 1.0 / 1.0;
+    const int image_width = 600;
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
 
     hittable_list world;
@@ -263,7 +281,7 @@ int main() {
     auto aperture = 0.0;
     color background(0, 0, 0);
 
-    switch (0) {
+    switch (6) {
     case 1:
         world = random_scene();
         background = color(0.70, 0.80, 1.00);
@@ -303,8 +321,6 @@ int main() {
         break;
     case 6:
         world = cornell_box();
-        aspect_ratio = 1.0;
-        image_width = 200;
         background = color(0, 0, 0);
         lookfrom = point3(278, 278, -800);
         lookat = point3(278, 278, 0);
@@ -312,8 +328,6 @@ int main() {
         break;
     case 7:
         world = cornell_smoke();
-        aspect_ratio = 1.0;
-        image_width = 400;
         lookfrom = point3(278, 278, -800);
         lookat = point3(278, 278, 0);
         vfov = 40.0;
@@ -321,8 +335,6 @@ int main() {
     default:
     case 8:
         world = final_scene();
-        aspect_ratio = 1.0;
-        image_width = 800;
         background = color(0, 0, 0);
         lookfrom = point3(478, 278, -600);
         lookat = point3(278, 278, 0);
@@ -330,8 +342,10 @@ int main() {
         break;
     }
 
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
     bvh_node worldBVH{ world, 0, 1 };
+    auto lights = make_shared<hittable_list>();
+    lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
+    lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
     // Camera
 
     vec3 vup(0, 1, 0);
@@ -351,7 +365,7 @@ int main() {
                 auto u = (i + random_double()) / (image_width - 1);
                 auto v = (j + random_double()) / (image_height - 1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, background, worldBVH, max_depth);
+                pixel_color += ray_color(r, background, world, lights, max_depth);
             }
             write_color(std::cout, pixel_color, samples_per_pixel);
         }

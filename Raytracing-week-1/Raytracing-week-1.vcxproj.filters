@@ -74,5 +74,11 @@
     <ClInclude Include="src\Constant_medium.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Onb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Pdf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

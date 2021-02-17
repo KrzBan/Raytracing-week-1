@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "rtweekend.h"
+
 class vec3 {
 public:
     double points[3];
