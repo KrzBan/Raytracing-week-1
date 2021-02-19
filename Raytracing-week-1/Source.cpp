@@ -1,3 +1,6 @@
+#include <array>
+#include <future>
+
 #include "src/rtweekend.h"
 
 #include "src/Color.h"
@@ -270,7 +273,7 @@ int main() {
     const auto aspect_ratio = 1.0 / 1.0;
     const int image_width = 600;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 10;
     const int max_depth = 50;
 
     hittable_list world;
@@ -355,20 +358,46 @@ int main() {
 
     // Render
 
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    constexpr int coreCount = 6;
+    std::atomic<int> scanLinesLeft = image_height;
+    std::array<std::future<std::vector<color>>, coreCount> results;
 
-    for (int j = image_height - 1; j >= 0; --j) {
-        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < image_width; ++i) {
-            color pixel_color(0, 0, 0);
-            for (int s = 0; s < samples_per_pixel; ++s) {
-                auto u = (i + random_double()) / (image_width - 1);
-                auto v = (j + random_double()) / (image_height - 1);
-                ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, background, world, lights, max_depth);
+    for (int thread = 0; thread < coreCount; ++thread) {
+        results[thread] = std::async(std::launch::async, [&](int threadNum) {
+            std::vector<color> buffer;
+
+            auto range = image_height / coreCount;
+            if (image_height % coreCount) ++range;
+
+            auto start = image_height - 1 - threadNum * range;
+            auto end = start - range + 1;
+            if (threadNum == coreCount-1) end = 0;
+
+            for (int j = start; j >= end; --j) {
+                std::cerr << "\rScanlines remaining: " << --scanLinesLeft+1 << ' ' << std::flush;
+                for (int i = 0; i < image_width; ++i) {
+                    color pixel_color(0, 0, 0);
+                    for (int s = 0; s < samples_per_pixel; ++s) {
+                        auto u = (i + random_double()) / (image_width - 1);
+                        auto v = (j + random_double()) / (image_height - 1);
+                        ray r = cam.get_ray(u, v);
+                        pixel_color += ray_color(r, background, world, lights, max_depth);
+                    }
+                    buffer.push_back(pixel_color);
+                }
             }
-            write_color(std::cout, pixel_color, samples_per_pixel);
-        }
+
+            return buffer;
+            }, thread);
     }
+
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    for (auto& result : results) {
+        auto buffer = result.get();
+        for(auto& color:buffer)
+            write_color(std::cout, color, samples_per_pixel);
+    }
+       
+
     std::cerr << "\nDone.\n";
 }
