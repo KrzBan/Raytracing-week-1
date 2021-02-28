@@ -1,22 +1,22 @@
 #include <array>
 #include <future>
 
-#include "src/rtweekend.h"
-
-#include "src/Color.h"
-#include "src/Hittable_list.h"
-#include "src/Sphere.h"
-#include "src/Moving_sphere.h"
-#include "src/Bvh.h"
-#include "src/aarect.h"
-#include "src/Box.h"
-#include "src/Constant_medium.h"
-#include "src/Pdf.h"
-
-#include "src/Ray.h"
-#include "src/Camera.h"
-#include "src/Material.h"
-#include "src/Scenes.h"
+#include "src/raytracer/rtweekend.h"
+             
+#include "src/raytracer/Color.h"
+#include "src/raytracer/Hittable_list.h"
+#include "src/raytracer/Sphere.h"
+#include "src/raytracer/Moving_sphere.h"
+#include "src/raytracer/Bvh.h"
+#include "src/raytracer/aarect.h"
+#include "src/raytracer/Box.h"
+#include "src/raytracer/Constant_medium.h"
+#include "src/raytracer/Pdf.h"
+             
+#include "src/raytracer/Ray.h"
+#include "src/raytracer/Camera.h"
+#include "src/raytracer/Material.h"
+#include "src/raytracer/Scenes.h"
 
 //makes it so, we can include both headers in whichever order we want, otherwise, glad goes first
 //#define GLFW_INCLUDE_NONE

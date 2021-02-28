@@ -1,20 +1,20 @@
 #pragma once
 
-#include "src/rtweekend.h"
+#include "rtweekend.h"
 
-#include "src/Color.h"
-#include "src/Hittable_list.h"
-#include "src/Sphere.h"
-#include "src/Moving_sphere.h"
-#include "src/Bvh.h"
-#include "src/aarect.h"
-#include "src/Box.h"
-#include "src/Constant_medium.h"
-#include "src/Pdf.h"
+#include "Color.h"
+#include "Hittable_list.h"
+#include "Sphere.h"
+#include "Moving_sphere.h"
+#include "Bvh.h"
+#include "aarect.h"
+#include "Box.h"
+#include "Constant_medium.h"
+#include "Pdf.h"
 
-#include "src/Ray.h"
-#include "src/Camera.h"
-#include "src/Material.h"
+#include "Ray.h"
+#include "Camera.h"
+#include "Material.h"
 
 hittable_list random_scene() {
     hittable_list world;
