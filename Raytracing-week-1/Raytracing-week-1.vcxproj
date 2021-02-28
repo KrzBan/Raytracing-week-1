@@ -72,19 +72,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\Raytracing-week-1\Raytracing-week-1\external;$(SolutionDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -167,6 +167,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="external\stb_image.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="src\opengl\Buffer.cpp" />
     <ClCompile Include="src\opengl\Input.cpp" />
@@ -176,10 +177,12 @@
     <ClCompile Include="src\opengl\VertexArray.cpp" />
     <ClCompile Include="src\opengl\Window.cpp" />
     <ClCompile Include="src\raytracer\glad.c" />
+    <ClCompile Include="src\raytracer\Textures.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\glad\glad.h" />
     <ClInclude Include="external\GLFW\glfw3.h" />
+    <ClInclude Include="external\stb_image.h" />
     <ClInclude Include="src\opengl\Buffer.h" />
     <ClInclude Include="src\opengl\Input.h" />
     <ClInclude Include="src\opengl\KeyCodes.h" />
@@ -205,10 +208,9 @@
     <ClInclude Include="src\raytracer\Perlin.h" />
     <ClInclude Include="src\raytracer\Ray.h" />
     <ClInclude Include="src\raytracer\rtweekend.h" />
-    <ClInclude Include="src\raytracer\Rtw_stb_image.h" />
     <ClInclude Include="src\raytracer\Scenes.h" />
     <ClInclude Include="src\raytracer\Sphere.h" />
-    <ClInclude Include="src\raytracer\Texture.h" />
+    <ClInclude Include="src\raytracer\Textures.h" />
     <ClInclude Include="src\raytracer\Vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

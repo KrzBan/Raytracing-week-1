@@ -4,8 +4,6 @@
 
 #include "Utility.h"
 
-#include "Input.h"
-
 static GLFWwindow* OpenGLInit(int width, int height, std::string name);
 
 class Window
@@ -48,7 +46,6 @@ public:
 		*/
 		
 
-		Input::ResetKeyState();
 		glfwPollEvents();
 		glfwSwapBuffers(m_Window);
 	}
@@ -72,6 +69,10 @@ public:
 		m_IsVSyncOn = set;
 	}
 	const bool GetVSync() const { return m_IsVSyncOn; }
+
+	void Clear() const {
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
 
 	void SetTitle(std::string title) {
 		glfwSetWindowTitle(m_Window, title.c_str());
@@ -114,6 +115,8 @@ GLFWwindow* OpenGLInit(int width, int height, std::string name) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glViewport(0, 0, width, height);
 
 	return window;
 }

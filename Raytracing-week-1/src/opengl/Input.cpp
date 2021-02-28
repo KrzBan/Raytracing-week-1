@@ -21,8 +21,6 @@ void Input::Init(std::shared_ptr<Window> window) {
 	glfwSetMouseButtonCallback(window->GetWindow(), Input::MouseButtonCallback);
 	glfwSetCursorPosCallback(window->GetWindow(), Input::MousePosCallback);
 
-	glfwSetInputMode(window->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
 	if (glfwRawMouseMotionSupported())
 		glfwSetInputMode(window->GetWindow(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 

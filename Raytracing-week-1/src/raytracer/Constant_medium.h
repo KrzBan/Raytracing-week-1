@@ -4,7 +4,7 @@
 
 #include "hittable.h"
 #include "material.h"
-#include "texture.h"
+#include "textures.h"
 
 class constant_medium : public hittable {
 public:

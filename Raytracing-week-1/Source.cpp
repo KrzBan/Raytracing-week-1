@@ -18,6 +18,9 @@
 #include "src/raytracer/Material.h"
 #include "src/raytracer/Scenes.h"
 
+#include "src/opengl/Window.h"
+#include "src/opengl/Input.h"
+
 //makes it so, we can include both headers in whichever order we want, otherwise, glad goes first
 //#define GLFW_INCLUDE_NONE
 #include "glad/glad.h"
@@ -60,49 +63,32 @@ int main() {
     constexpr int windowWidth = 640;
     constexpr int windowHeight = 480;
 
-    GLFWwindow* window;
+    std::shared_ptr<Window> window = std::make_shared<Window>( windowWidth, windowHeight, "Raytracing" );
+    Input::Init(window);
 
-    if ( glfwInit() == 0 )  return -1;
+    while (!glfwWindowShouldClose(window->GetWindow())){
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+        window->Clear();
 
-    glfwSetErrorCallback([](int error, const char* description) {std::cerr << "Error " << error << ": " << description << '\n'; });
+        //Inputs
+        if (Input::GetKeyDown(KB_ESCAPE)) {
+            glfwSetWindowShouldClose(window->GetWindow(), true);
+        }
 
-    window = glfwCreateWindow(windowWidth, windowHeight, "Hello Raytracing", NULL, NULL);
-    if (window == NULL){
-        glfwTerminate();
-        return -1;
-    }
+        //Render
 
-    glfwMakeContextCurrent(window);
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-        std::cerr << "Failed to initialize OpenGL context" << '\n';
-        return -1;
-    }
-
-    glViewport(0, 0, windowWidth, windowHeight);
-
-    while (!glfwWindowShouldClose(window)){
-        /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        /* Swap front and back buffers */
-        glfwSwapBuffers(window);
-
-        /* Poll for and process events */
-        glfwPollEvents();
+        //Swap buffers, reset Input
+        Input::ResetKeyState();
+        window->OnUpdate();
     }
 
     glfwTerminate();
     return 0;
 
     // Image
-    const auto aspect_ratio = 1.0 / 1.0;
     const int image_width = 600;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int image_height = 400;
+    const auto aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
     const int samples_per_pixel = 10;
     const int max_depth = 50;
 

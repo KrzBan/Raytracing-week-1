@@ -3,7 +3,7 @@
 #include "rtweekend.h"
 #include "Hittable.h"
 
-#include "texture.h"
+#include "textures.h"
 #include "Onb.h"
 #include "Pdf.h"
 

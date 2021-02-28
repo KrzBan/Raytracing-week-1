@@ -3,7 +3,6 @@
 #include <cassert>
 #include <algorithm>
 
-
 Texture::Texture(uint32_t width, uint32_t height)
     : m_ID(0), m_Width(width), m_Height(height), m_BPP(4)
 {
