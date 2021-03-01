@@ -65,10 +65,14 @@ public:
     }
 
     virtual double value(const vec3& direction) const override {
-        return 0.5 * p[0]->value(direction) + 0.5 * p[1]->value(direction);
+        if(p[0] && p[1])
+            return 0.5 * p[0]->value(direction) + 0.5 * p[1]->value(direction);
+        return 1;
     }
 
     virtual vec3 generate() const override {
+        if (p[0] == nullptr || p[1] == nullptr) return vec3(1.0, 1.0, 1.0);
+
         if (random_double() < 0.5)
             return p[0]->generate();
         else

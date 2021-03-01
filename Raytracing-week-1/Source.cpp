@@ -48,7 +48,7 @@ color ray_color( const ray& r, const color& background, const hittable& world,
             * ray_color(srec.specular_ray, background, world, lights, depth - 1);
     }
 
-    auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
+    auto light_ptr = std::make_shared<hittable_pdf>(lights, rec.p);
     mixture_pdf p(light_ptr, srec.pdf_ptr);
 
     ray scattered = ray(rec.p, p.generate(), r.time());
@@ -69,13 +69,11 @@ int main() {
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-   
-
     // Image
     const int image_width = windowWidth;
     const int image_height = windowHeight;
     const auto aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
-    const int samples_per_pixel = 10;
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
 
     hittable_list world;
@@ -86,7 +84,7 @@ int main() {
     auto aperture = 0.0;
     color background(0, 0, 0);
 
-    switch (6) {
+    switch (1) {
     case 1:
         world = random_scene();
         background = color(0.70, 0.80, 1.00);
@@ -156,6 +154,7 @@ int main() {
     std::shared_ptr<Shader> resultShader = std::make_shared<Shader>("texToScreen", "assets/shaders/texToScreen_vert.glsl", "assets/shaders/texToScreen_frag.glsl");
 
     constexpr int coreCount = 6;
+    std::atomic<bool> cancelThreads = false;
     std::atomic<int> scanLinesLeft = image_height;
     std::array<std::future<void>, coreCount> results;
 
@@ -178,6 +177,8 @@ int main() {
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0, 0, 0);
                     for (int s = 0; s < samples_per_pixel; ++s) {
+                        if (cancelThreads) return;
+
                         auto u = (i + random_double()) / (image_width - 1);
                         auto v = (j + random_double()) / (image_height - 1);
                         ray r = cam.get_ray(u, v);
@@ -186,13 +187,15 @@ int main() {
                     color4 actualColor = colorToColor4(pixel_color, samples_per_pixel);
                     buffer.push_back(actualColor);
                 }
-                //resultTexture->SetData(buffer.data(), buffer.size() * sizeof(color4), 0, j, buffer.size(), 1);
+                
                 std::lock_guard<std::mutex> lock(resultMut);
                 std::copy(buffer.begin(), buffer.end(), resultBuffer.begin() + j * windowWidth);
             }
 
             }, thread);
     }
+
+    size_t finishedTasks = 0;//non atomic, faster than scanlinesLeft variable
 
     while (!glfwWindowShouldClose(window->GetWindow())) {
 
@@ -202,15 +205,23 @@ int main() {
         if (Input::GetKeyDown(KB_ESCAPE)) {
             glfwSetWindowShouldClose(window->GetWindow(), true);
         }
-        
 
         //Render
         resultShader->Bind();
         resultTexture->Bind();
-
-        {
+        
+        
+        if(finishedTasks != coreCount){
             std::lock_guard<std::mutex> lock(resultMut);
             resultTexture->SetData(resultBuffer.data(), resultBuffer.size() * sizeof(color4));
+        }
+        else {
+            for (auto& result : results) {
+                if (result.valid() && (result.wait_for(std::chrono::seconds(0)) == std::future_status::ready)) {
+                    result.get();
+                    ++finishedTasks;
+                }
+            }
         }
 
         RenderQuad();
@@ -220,16 +231,12 @@ int main() {
         window->OnUpdate();
     }
 
-    /*
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    cancelThreads = true;
+    
     for (auto& result : results) {
-        auto buffer = result.get();
-        for(auto& color:buffer)
-            write_color(std::cout, color, samples_per_pixel);
+        if(result.valid())
+            result.get();
     }
-       
-    */
-   
 
-    std::cerr << "\nDone.\n";
+    return 0;
 }
