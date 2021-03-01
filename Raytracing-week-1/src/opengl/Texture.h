@@ -19,6 +19,7 @@ public:
 	void Unbind();
 
 	void SetData(void* data, uint32_t size);
+	void SetData(void* data, uint32_t size, uint32_t xOffset, uint32_t yOffset, uint32_t width, uint32_t height);
 
 	inline int GetWidth()const{ return m_Width; };
 	inline int GetHeight()const { return m_Height; };

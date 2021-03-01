@@ -74,12 +74,17 @@ void Texture::Unbind(){
 void Texture::SetData(void* data, uint32_t size) {
     assert(size == m_Width * m_Height * m_BPP && "Wrong texture size!");
 
-    glBindTexture(GL_TEXTURE_2D, m_ID);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+    SetData(data, size, 0, 0, m_Width, m_Height);
 }
 
-bool Texture::operator==(const Texture& other)
-{
+void Texture::SetData(void* data, uint32_t size, uint32_t xOffset, uint32_t yOffset, uint32_t width, uint32_t height) {
+    assert(size <= m_Width * m_Height * m_BPP && "Wrong texture size!");
+
+    glBindTexture(GL_TEXTURE_2D, m_ID);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, xOffset, yOffset, width, height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+}
+
+bool Texture::operator==(const Texture& other){
     return m_ID == other.m_ID;
 }
 

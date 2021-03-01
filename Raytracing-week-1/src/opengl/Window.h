@@ -46,8 +46,8 @@ public:
 		*/
 		
 
-		glfwPollEvents();
 		glfwSwapBuffers(m_Window);
+		glfwPollEvents();
 	}
 	/*
 	void ImGuiNewFrame() {
@@ -71,7 +71,7 @@ public:
 	const bool GetVSync() const { return m_IsVSyncOn; }
 
 	void Clear() const {
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void SetTitle(std::string title) {
@@ -111,9 +111,10 @@ GLFWwindow* OpenGLInit(int width, int height, std::string name) {
 		return nullptr;
 	}
 
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
+	glEnable(GL_DEBUG_OUTPUT); 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glViewport(0, 0, width, height);

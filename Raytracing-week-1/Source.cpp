@@ -20,6 +20,8 @@
 
 #include "src/opengl/Window.h"
 #include "src/opengl/Input.h"
+#include "src/opengl/Texture.h"
+#include "src/opengl/Shader.h"
 
 //makes it so, we can include both headers in whichever order we want, otherwise, glad goes first
 //#define GLFW_INCLUDE_NONE
@@ -57,7 +59,6 @@ color ray_color( const ray& r, const color& background, const hittable& world,
         * ray_color(scattered, background, world, lights, depth - 1) / pdf_val;
 }
 
-
 int main() {
 
     constexpr int windowWidth = 640;
@@ -65,6 +66,17 @@ int main() {
 
     std::shared_ptr<Window> window = std::make_shared<Window>( windowWidth, windowHeight, "Raytracing" );
     Input::Init(window);
+
+    std::shared_ptr<Texture> resultTexture = std::make_shared<Texture>(windowWidth, windowHeight);
+    std::shared_ptr<Shader> resultShader = std::make_shared<Shader>("texToScreen", "assets/shaders/texToScreen_vert.glsl", "assets/shaders/texToScreen_frag.glsl");
+
+    std::vector<unsigned char> data( 120 * 80 * 4 );
+    for (auto& value : data)
+        value = 255;
+
+    resultTexture->SetData(data.data(), data.size() * sizeof(char), 80, 300, 80, 120);
+
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     while (!glfwWindowShouldClose(window->GetWindow())){
 
@@ -76,13 +88,16 @@ int main() {
         }
 
         //Render
+        resultShader->Bind();
+        resultTexture->Bind();
+
+        RenderQuad();
 
         //Swap buffers, reset Input
         Input::ResetKeyState();
         window->OnUpdate();
     }
 
-    glfwTerminate();
     return 0;
 
     // Image

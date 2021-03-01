@@ -10,3 +10,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "external/stb_image.h"
+
+//Quad primitive, straight from LearnOpenGL.com
+void RenderQuad();
