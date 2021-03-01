@@ -67,42 +67,13 @@ int main() {
     std::shared_ptr<Window> window = std::make_shared<Window>( windowWidth, windowHeight, "Raytracing" );
     Input::Init(window);
 
-    std::shared_ptr<Texture> resultTexture = std::make_shared<Texture>(windowWidth, windowHeight);
-    std::shared_ptr<Shader> resultShader = std::make_shared<Shader>("texToScreen", "assets/shaders/texToScreen_vert.glsl", "assets/shaders/texToScreen_frag.glsl");
-
-    std::vector<unsigned char> data( 120 * 80 * 4 );
-    for (auto& value : data)
-        value = 255;
-
-    resultTexture->SetData(data.data(), data.size() * sizeof(char), 80, 300, 80, 120);
-
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-    while (!glfwWindowShouldClose(window->GetWindow())){
-
-        window->Clear();
-
-        //Inputs
-        if (Input::GetKeyDown(KB_ESCAPE)) {
-            glfwSetWindowShouldClose(window->GetWindow(), true);
-        }
-
-        //Render
-        resultShader->Bind();
-        resultTexture->Bind();
-
-        RenderQuad();
-
-        //Swap buffers, reset Input
-        Input::ResetKeyState();
-        window->OnUpdate();
-    }
-
-    return 0;
+   
 
     // Image
-    const int image_width = 600;
-    const int image_height = 400;
+    const int image_width = windowWidth;
+    const int image_height = windowHeight;
     const auto aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
     const int samples_per_pixel = 10;
     const int max_depth = 50;
@@ -181,13 +152,18 @@ int main() {
 
     // Render
 
+    std::shared_ptr<Texture> resultTexture = std::make_shared<Texture>(windowWidth, windowHeight);
+    std::shared_ptr<Shader> resultShader = std::make_shared<Shader>("texToScreen", "assets/shaders/texToScreen_vert.glsl", "assets/shaders/texToScreen_frag.glsl");
+
     constexpr int coreCount = 6;
     std::atomic<int> scanLinesLeft = image_height;
-    std::array<std::future<std::vector<color>>, coreCount> results;
+    std::array<std::future<void>, coreCount> results;
+
+    std::vector<color4> resultBuffer(windowWidth * windowHeight);
+    std::mutex resultMut;
 
     for (int thread = 0; thread < coreCount; ++thread) {
         results[thread] = std::async(std::launch::async, [&](int threadNum) {
-            std::vector<color> buffer;
 
             auto range = image_height / coreCount;
             if (image_height % coreCount) ++range;
@@ -197,6 +173,7 @@ int main() {
             if (threadNum == coreCount-1) end = 0;
 
             for (int j = start; j >= end; --j) {
+                std::vector<color4> buffer;
                 std::cerr << "\rScanlines remaining: " << --scanLinesLeft+1 << ' ' << std::flush;
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0, 0, 0);
@@ -206,14 +183,44 @@ int main() {
                         ray r = cam.get_ray(u, v);
                         pixel_color += ray_color(r, background, world, lights, max_depth);
                     }
-                    buffer.push_back(pixel_color);
+                    color4 actualColor = colorToColor4(pixel_color, samples_per_pixel);
+                    buffer.push_back(actualColor);
                 }
+                //resultTexture->SetData(buffer.data(), buffer.size() * sizeof(color4), 0, j, buffer.size(), 1);
+                std::lock_guard<std::mutex> lock(resultMut);
+                std::copy(buffer.begin(), buffer.end(), resultBuffer.begin() + j * windowWidth);
             }
 
-            return buffer;
             }, thread);
     }
 
+    while (!glfwWindowShouldClose(window->GetWindow())) {
+
+        window->Clear();
+
+        //Inputs
+        if (Input::GetKeyDown(KB_ESCAPE)) {
+            glfwSetWindowShouldClose(window->GetWindow(), true);
+        }
+        
+
+        //Render
+        resultShader->Bind();
+        resultTexture->Bind();
+
+        {
+            std::lock_guard<std::mutex> lock(resultMut);
+            resultTexture->SetData(resultBuffer.data(), resultBuffer.size() * sizeof(color4));
+        }
+
+        RenderQuad();
+
+        //Swap buffers, reset Input
+        Input::ResetKeyState();
+        window->OnUpdate();
+    }
+
+    /*
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
     for (auto& result : results) {
         auto buffer = result.get();
@@ -221,6 +228,8 @@ int main() {
             write_color(std::cout, color, samples_per_pixel);
     }
        
+    */
+   
 
     std::cerr << "\nDone.\n";
 }
